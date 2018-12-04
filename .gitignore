@@ -22,3 +22,5 @@
 
 .byebug_history
 /vendor/bundle
+# Ignore Spring files.
+/spring/*.pid
