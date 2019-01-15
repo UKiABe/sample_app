@@ -78,7 +78,15 @@ class User < ApplicationRecord
   end
 
   def feed
-    Micropost.where("user_id = ?", id)
+    # Rubyのコードfollowing_idsはDBへの問い合わせで配列作り、その後もう一度DBに問い合わせになる。
+    # Micropost.where("user_id IN (?) OR user_id = ?", following_ids, id)
+    # 改善: following_idsを生のSQLに書き換え、DB内で集合の処理をおこなう
+    # Micropost.where("user_id IN (:following_ids) OR user_id = :user_id",
+                    # following_ids: following_ids, user_id: id)
+    following_ids = "SELECT followed_id FROM relationships
+                    WHERE follower_id = :user_id"
+    Micropost.where("user_id IN (#{following_ids}) OR user_id = :user_id",
+                    user_id: id)                    
   end
   
   def follow(other_user)
@@ -92,8 +100,6 @@ class User < ApplicationRecord
   def following?(other_user)
     following.include?(other_user)
   end
-  
-  
 
   private
     def downcase_email
